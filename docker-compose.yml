@@ -1,0 +1,51 @@
+version: '3'
+services:
+  app:
+    container_name: app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 80:80
+    restart: always
+    depends_on:
+      - db
+    environment:
+      MYSQL_HOST: ${MYSQL_HOST:-db}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-db_odontologia}
+      MYSQL_USER: ${MYSQL_USER:-root}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-admin}
+      APP_DOMAIN: ${APP_DOMAIN:-edent.local}
+      APP_IP: ${APP_IP:-127.0.0.1}
+    networks:
+      - netlocal
+    healthcheck:
+      test: ["CMD", "curl", "-I", "http://app:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - .:/var/www/html/
+
+  db:
+    container_name: db
+    image: mysql:5.7.22
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - 3306:3306
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD:-admin}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-db_odontologia}
+    networks:
+      - netlocal
+    volumes:
+      - mysql-db:/var/lib/mysql
+      - ./migrations/data.sql:/docker-entrypoint-initdb.d/data.sql
+
+volumes:
+  mysql-db:
+
+networks:
+  netlocal:
+    driver: bridge

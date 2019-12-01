@@ -1,0 +1,25 @@
+sudo: required
+services:
+  - docker
+
+dist: trusty
+
+env:
+  - SHA=$(git rev-parse HEAD)
+
+before_install:
+  - docker image build --tag juliocesarmidia/edent-app:$SHA -f ./Dockerfile .
+
+script:
+  - docker container run -it --rm --name edent-app --entrypoint "" juliocesarmidia/edent-app:$SHA bash -c "echo"
+
+after_success:
+  - docker image build --tag juliocesarmidia/edent-app:v1.0.0 -f Dockerfile .
+  - docker image build --tag juliocesarmidia/edent-app:$SHA -f Dockerfile .
+
+  # log into docker registry account
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+  # push latest image and 1.0.0 version to docker registry
+  - docker image push juliocesarmidia/edent-app:v1.0.0
+  - docker image push juliocesarmidia/edent-app:$SHA
